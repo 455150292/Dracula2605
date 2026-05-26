@@ -4,8 +4,8 @@ on:
   push:
     branches: [ "main" ]
   schedule:
-    - cron: "0 1 * * *"  # 每天UTC时间1点（北京时间9点）自动运行
-  workflow_dispatch:       # 允许你手动触发运行
+    - cron: "0 1 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -20,16 +20,19 @@ jobs:
       - name: 设置 Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 'latest'
+          node-version: '20'
 
-      - name: 安装混淆工具
-        run: npm install -g javascript-obfuscator
+      - name: 安装 wget 和混淆工具
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget
+          npm install -g javascript-obfuscator
 
       - name: 拉取最新源码
         run: |
           wget -O unobfuscated-worker.js https://raw.githubusercontent.com/bia-pain-bache/BPB-Worker-Panel/main/build/unobfuscated-worker.js
 
-      - name: 混淆生成新脚本
+      - name: 混淆生成 _worker.js
         run: |
           javascript-obfuscator unobfuscated-worker.js --output _worker.js \
             --compact true \
