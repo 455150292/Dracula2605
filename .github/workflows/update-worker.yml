@@ -1,0 +1,46 @@
+name: Auto Update BPB Worker
+
+on:
+  push:
+    branches: [ "main" ]
+  schedule:
+    - cron: "0 1 * * *"  # 每天UTC时间1点（北京时间9点）自动运行
+  workflow_dispatch:       # 允许你手动触发运行
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'latest'
+
+      - name: 安装混淆工具
+        run: npm install -g javascript-obfuscator
+
+      - name: 拉取最新源码
+        run: |
+          wget -O unobfuscated-worker.js https://raw.githubusercontent.com/bia-pain-bache/BPB-Worker-Panel/main/build/unobfuscated-worker.js
+
+      - name: 混淆生成新脚本
+        run: |
+          javascript-obfuscator unobfuscated-worker.js --output _worker.js \
+            --compact true \
+            --control-flow-flattening true \
+            --dead-code-injection true \
+            --string-array-encoding 'rc4' \
+            --rename-globals true
+
+      - name: 提交并推送更改
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: '自动更新 BPB Worker'
+          commit_user_name: 'github-actions[bot]'
+          commit_user_email: 'github-actions[bot]@users.noreply.github.com'
